@@ -1,0 +1,76 @@
+services :
+  keycloak :
+    image : quay.io/keycloak/keycloak:26.1
+    container_name : kc26
+    environment :
+      - KC_BOOTSTRAP_ADMIN_USERNAME=${KEYCLOAK_ADMIN}
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+      
+      - KC_HEALTH_ENABLED=true
+      - KC_METRICS_ENABLED=true
+      
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://postgres/${POSTGRES_DB}
+      - KC_DB_USERNAME=${POSTGRES_USER}
+      - KC_DB_PASSWORD=${POSTGRES_PASSWORD}
+      
+      # - KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true
+      - KC_HOSTNAME=${KEYCLOAK_HOSTNAME}
+      - KC_HOSTNAME_STRICT=false
+      - KC_HTTP_ENABLED=true
+
+      - KC_PROXY_HEADERS=forwarded
+
+      - KC_HTTPS_CERTIFICATE_FILE=/keycloak/certificates/__smartmeservices.ae.pem
+      - KC_HTTPS_CERTIFICATE_KEY_FILE=/keycloak/certificates/__smartmeservices.ae_key.pem
+
+      - KK_TO_RMQ_URL=rabbitmq
+      - KK_TO_RMQ_USERNAME=${RABBITMQ_USER}
+      - KK_TO_RMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - KK_TO_RMQ_VHOST=/
+
+    # ports :
+    #   - "8080:8080"
+    #   - "8443:8443"
+    volumes :
+      - ./certificates:/keycloak/certificates
+      - ./themes:/opt/keycloak/themes
+      - ./providers:/opt/keycloak/providers/
+    command : start --features organization
+    restart : always
+    depends_on :
+      - postgres
+      - rabbitmq
+    networks :
+      - me_network
+
+  postgres :
+    image : postgres:16.3
+    container_name : postgres
+    restart : always
+    environment :
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports :
+      - 5432:5432
+    volumes :
+      - ./db_data:/var/lib/postgresql/data
+    networks :
+      - me_network
+
+  rabbitmq :
+    image : rabbitmq:3-management
+    restart : always
+    ports :
+      - "5672:5672"
+      - "15672:15672"
+    environment :
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+    networks :
+      - me_network
+
+networks:
+   me_network:
+    external: true

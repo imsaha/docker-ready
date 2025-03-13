@@ -1,0 +1,21 @@
+name: proxy_man
+services:
+  nginx_manager:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: nginx_manager
+    restart: always
+    ports:
+      - "80:80"   # Web interface
+      - "443:443" # SSL support
+      - "81:81"   # Admin panel
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+    environment:
+      - DISABLE_IPV6=false
+    networks:
+      - me_network  
+
+networks:
+   me_network:
+    external: true
