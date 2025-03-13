@@ -1,0 +1,61 @@
+name: redis-cache
+
+services:
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"  # Expose Redis port to host machine
+    volumes:
+      - ./data:/data
+    networks:
+      - redis_network
+    command: [
+        "redis-server", 
+        "--requirepass", "${REDIS_PASS}",  # Set a strong password for Redis authentication
+        "--save", "60", "1", 
+        "--appendonly", "yes"
+      ]  # Enable data persistence and password protection
+
+  redisinsight:
+    image: redislabs/redisinsight:latest
+    container_name: redisinsight
+    ports:
+      - "5540:5540"  # Expose RedisInsight port to host machine
+    volumes:
+      - ./redisinsight_data:/data
+    environment:
+      - INSIGHT_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASS}  # Set the password for Redis authentication
+    depends_on:
+      - redis
+    networks:
+      - redis_network
+
+  nginx:
+    image: nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/templates/nginx-basic-auth.conf.template
+    ports:
+      - "${NGINX_PORT:-9000}:${NGINX_PORT:-9000}"
+    environment:
+      - FORWARD_HOST=redisinsight
+      - FORWARD_PORT=${RIPORT:-5540}
+      - NGINX_PORT=${NGINX_PORT:-9000}
+      - BASIC_USERNAME=${BASIC_USERNAME:-redis}
+      - BASIC_PASSWORD=${BASIC_PASSWORD:-password}
+    command:
+      - bash
+      - -c
+      - |
+        printf "$$BASIC_USERNAME:$$(openssl passwd -1 $$BASIC_PASSWORD)\n" >> /etc/nginx/.htpasswd
+        /docker-entrypoint.sh nginx -g "daemon off;"
+    depends_on:
+      - redisinsight
+    networks:
+      - redis_network
+
+
+networks:
+  redis_network:
+    driver: bridge
