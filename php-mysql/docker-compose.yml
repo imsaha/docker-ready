@@ -1,0 +1,41 @@
+name: mysql_server
+services:
+  mysql:
+    image: mysql:8.0.37
+    container_name: mysql_container
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: test123
+    ports:
+      - "3306:3306" # Expose MySQL on localhost
+    volumes:
+      - mysql_data:/var/lib/mysql # Persist MySQL data
+      - ./mysql.cnf:/etc/mysql/conf.d/my.cnf # Mount custom MySQL configuration
+
+  php:
+    image: php:5.5.38-apache
+    container_name: php_site
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      MYSQL_HOST: mysql 
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DB: ${MYSQL_DB}
+      APACHE_LOG_DIR: /dev/stdout
+    ports:
+      - "80:80"
+    volumes:
+      - ./site:/var/www/html # Mount PHP website directory
+      - ./php-logs:/var/log/php  # Mount for PHP logs
+      - ./php.ini:/usr/local/etc/php/conf.d/custom-php.ini  #  Mount custom PHP ini
+
+    depends_on:
+      - mysql 
+
+
+volumes:
+  mysql_data:
+    driver: local
