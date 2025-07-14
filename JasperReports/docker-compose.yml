@@ -1,0 +1,55 @@
+
+services:
+  jasperdb:
+    image: postgres:14
+    container_name: jasperreports-postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=jasperserver
+    volumes:
+      - jasperdb_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - jaspernetwork
+
+  jasperserver:
+    image: bitnami/jasperreports:8.2.0
+    container_name: jasperreports-server
+    environment:
+      - JASPERREPORTS_DATABASE_TYPE=postgresql
+      - JASPERREPORTS_DATABASE_HOST=jasperdb
+      - JASPERREPORTS_DATABASE_PORT_NUMBER=5432
+      - JASPERREPORTS_DATABASE_NAME=jasperserver
+      - JASPERREPORTS_DATABASE_USER=postgres
+      - JASPERREPORTS_DATABASE_PASSWORD=postgres
+      - JASPERREPORTS_USERNAME=jasperadmin
+      - JASPERREPORTS_PASSWORD=jasperadmin
+      # Optional settings
+      - JASPERREPORTS_EMAIL_HOST=smtp.example.com
+      - JASPERREPORTS_EMAIL_PORT=587
+      - JASPERREPORTS_EMAIL_USER=user@example.com
+      - JASPERREPORTS_EMAIL_PASSWORD=emailpassword
+      - JASPERREPORTS_EMAIL_FROM_ADDRESS=reports@example.com
+    depends_on:
+      - jasperdb
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+    restart: unless-stopped
+    volumes:
+      - jasperserver_data:/bitnami/jasperreports
+    networks:
+      - jaspernetwork
+
+networks:
+  jaspernetwork:
+    driver: bridge
+
+volumes:
+  jasperdb_data:
+    driver: local
+  jasperserver_data:
+    driver: local
