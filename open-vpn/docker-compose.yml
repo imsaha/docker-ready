@@ -1,0 +1,15 @@
+name: open-vpn
+services:
+  openvpn:
+    image: openvpn/openvpn-as
+    container_name: openvpn-server
+    cap_add:
+      - NET_ADMIN
+      - MKNOD
+    ports:
+      - "943:943" # Web UI port (via community version)
+      - "443:443/tcp" # Fallback port for UI if needed
+      - "1194:1194/udp"
+    volumes:
+      - ./data:/openvpn
+    restart: unless-stopped

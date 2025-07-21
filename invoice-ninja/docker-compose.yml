@@ -1,0 +1,40 @@
+services:
+  server:
+    image: invoiceninja/invoiceninja:5
+    container_name: invoiceninja-app
+    restart: always
+    ports:
+      - "9000:9000"
+    environment:
+      - APP_URL=http://localhost:9000
+      - APP_KEY=base64:SomeRandomStringWith32Chars===
+      - APP_DEBUG=0
+      - APP_ENV=production
+      - APP_CIPHER=AES-256-CBC
+      - DB_TYPE=mysql
+      - DB_STRICT = false
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=ninja
+      - DB_USERNAME=ninja
+      - DB_PASSWORD=ninja
+    volumes:
+      - ./data/public:/var/www/app/public
+      - ./data/storage:/var/www/app/storage
+    depends_on:
+      - db
+
+  db:
+    image: mysql:5.7
+    container_name: invoiceninja-db
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=secret
+      - MYSQL_DATABASE=ninja
+      - MYSQL_USER=ninja
+      - MYSQL_PASSWORD=ninja
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+
+volumes:
+  ninja-data:
